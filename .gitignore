@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pdf
+.claude-flow/
+*.egg-info/
+.env
