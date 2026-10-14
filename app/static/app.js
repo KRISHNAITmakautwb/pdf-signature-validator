@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadVerifiedTickBtn = document.getElementById('downloadVerifiedTickBtn');
         const isIntact = report.signatures && report.signatures.length > 0 && report.signatures.some(s => s.intact);
 
-        if (isIntact && (report.overall_status === 'VALID' || report.overall_status === 'INTACT_UNTRUSTED_CA')) {
+        if (isIntact && (report.overall_status === 'VALID' || report.overall_status === 'INTACT_UNTRUSTED_CA' || report.overall_status === 'CONTENT_INTACT_RSA_INVALID')) {
             if (verifiedTickCallout) verifiedTickCallout.style.display = 'flex';
             if (downloadVerifiedTickBtn) downloadVerifiedTickBtn.style.display = 'inline-flex';
         } else {

@@ -88,7 +88,7 @@ async def download_verified_display_copy(file: UploadFile = File(...)):
         if report.get("overall_status") == "TAMPERED_OR_INVALID":
             raise HTTPException(
                 status_code=400,
-                detail="Security rejection: Cannot generate verified display copy for a document with invalid or tampered signatures."
+                detail="Security rejection: Cannot generate verified display copy — document bytes were modified after signing."
             )
 
         verified_bytes = await asyncio.to_thread(generate_verified_display_copy, content, report)

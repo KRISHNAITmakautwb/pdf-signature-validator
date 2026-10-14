@@ -175,7 +175,8 @@ def create_green_tick_stamp(
     original_sha256: str,
     reason: Optional[str] = None,
     location: Optional[str] = None,
-    page_rotation: int = 0
+    page_rotation: int = 0,
+    overall_status: str = "VALID"
 ) -> bytes:
     """
     Generates the standard verified signature stamp:
@@ -297,9 +298,14 @@ def create_green_tick_stamp(
 
     c.setFillColor(colors.black)
 
-    # Header: "Signature valid" in Serif (Times-Roman)
-    c.setFont("Times-Roman", 10.5)
-    c.drawString(tx, stamp_h - 10.0, "Signature valid")
+    # Header: status-aware label in Serif (Times-Roman)
+    if overall_status == "CONTENT_INTACT_RSA_INVALID":
+        header_text = "Content intact (RSA proof defective)"
+        c.setFont("Times-Roman", 7.5)
+    else:
+        header_text = "Signature valid"
+        c.setFont("Times-Roman", 10.5)
+    c.drawString(tx, stamp_h - 10.0, header_text)
 
     # Strictly preserve actual document content (do not fabricate missing fields)
     lines_to_draw = []
@@ -429,7 +435,8 @@ def generate_verified_display_copy(
                 original_sha256=original_sha256,
                 reason=sig_reason,
                 location=sig_location,
-                page_rotation=page_rot
+                page_rotation=page_rot,
+                overall_status=validation_report.get("overall_status", "VALID")
             )
 
             stamp_reader = pypdf.PdfReader(io.BytesIO(stamp_pdf_bytes))
