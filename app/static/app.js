@@ -197,19 +197,17 @@ document.addEventListener('DOMContentLoaded', () => {
             verdictHeadline.textContent = 'Cryptographic Signature Intact';
             verdictDetail.textContent = 'The document has NOT been modified since signing. The cryptographic digest matches. Note: The certificate was issued by an external or national CA (or self-signed) not present in the local server trust store.';
             verdictIcon.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
+        } else if (report.overall_status === 'CONTENT_INTACT_RSA_INVALID') {
+            verdictBanner.classList.add('warning');
+            verdictBadge.textContent = 'CONTENT INTACT — SIGNATURE PROOF DEFECTIVE';
+            verdictHeadline.textContent = 'Document Unmodified, but RSA Proof Invalid';
+            verdictDetail.textContent = 'The document byte-range hash matches exactly — content has NOT been altered since signing. However, the RSA/ECDSA cryptographic proof failed: the signature bytes do not verify against the signer\'s certificate public key. This is a defect in the original signing process, not a sign of document tampering.';
+            verdictIcon.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
         } else if (report.overall_status === 'TAMPERED_OR_INVALID') {
             verdictBanner.classList.add('tampered');
             verdictBadge.textContent = 'TAMPERED / INVALID';
-            const firstSig = report.signatures && report.signatures[0];
-            const hashIntact = firstSig && firstSig.intact;
-            const rsaValid = firstSig && firstSig.cryptographically_valid;
-            if (hashIntact && !rsaValid) {
-                verdictHeadline.textContent = 'Cryptographic Proof Invalid!';
-                verdictDetail.textContent = 'The document byte-range hash is intact (content not modified), but the RSA/ECDSA signature proof failed. The private key used does not match the certificate, or the signature data is corrupt.';
-            } else {
-                verdictHeadline.textContent = 'Integrity Check Failed!';
-                verdictDetail.textContent = 'The document contents do NOT match the signed cryptographic hash — the file has been modified after signing, or the signature byte stream is corrupted.';
-            }
+            verdictHeadline.textContent = 'Integrity Check Failed!';
+            verdictDetail.textContent = 'The document contents do NOT match the signed cryptographic hash — the file has been modified after signing, or the signature byte stream is corrupted.';
             verdictIcon.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         } else {
             verdictBanner.classList.add('unsigned');
@@ -439,6 +437,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="background: rgba(0, 242, 169, 0.08); border: 1px solid var(--status-valid-border); border-radius: var(--radius-md); padding: 16px; color: var(--status-valid);">
                     <strong>No Shadow Attacks or Unauthorized Modifications Detected.</strong>
                     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">The document does not have unauthorized incremental updates after the signature definition.</p>
+                </div>
+            `;
+            return;
+        }
+
+        if (anomalies.length === 0 && report.overall_status === 'CONTENT_INTACT_RSA_INVALID') {
+            anomaliesList.innerHTML = `
+                <div style="background: rgba(255, 180, 0, 0.08); border: 1px solid var(--status-warning-border, #f59e0b); border-radius: var(--radius-md); padding: 16px; color: var(--status-warning, #f59e0b);">
+                    <strong>RSA Proof Defective (Content Unmodified):</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Byte-range hash matches — no content changes detected. The RSA/ECDSA signature proof itself is invalid, which is a defect in the original signing process.</p>
                 </div>
             `;
             return;

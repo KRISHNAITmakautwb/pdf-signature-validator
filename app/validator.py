@@ -176,6 +176,7 @@ class PDFSignatureValidator:
         signatures_data = []
         overall_valid = True
         overall_trusted = True
+        overall_rsa_invalid = False
         has_at_least_one_sig = False
         anomalies = []
 
@@ -347,10 +348,14 @@ class PDFSignatureValidator:
 
                 if not (sig_intact and sig_math_valid):
                     overall_valid = False
+                    if sig_intact and not sig_math_valid:
+                        overall_rsa_invalid = True
 
                 # Verdict for this signature
                 if sig_intact and sig_math_valid:
                     verdict = "VALID" if is_trusted else "INTACT_UNTRUSTED_CA"
+                elif sig_intact and not sig_math_valid:
+                    verdict = "CONTENT_INTACT_RSA_INVALID"
                 else:
                     verdict = "TAMPERED_OR_INVALID"
 
@@ -412,7 +417,11 @@ class PDFSignatureValidator:
         if not has_at_least_one_sig:
             overall_status = "UNSIGNED"
         elif not overall_valid:
-            overall_status = "TAMPERED_OR_INVALID"
+            # Distinguish: content intact but RSA proof failed vs bytes actually modified
+            if overall_rsa_invalid and all(s.get("intact", False) for s in signatures_data):
+                overall_status = "CONTENT_INTACT_RSA_INVALID"
+            else:
+                overall_status = "TAMPERED_OR_INVALID"
         elif not overall_trusted:
             overall_status = "INTACT_UNTRUSTED_CA"
         else:
