@@ -200,8 +200,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (report.overall_status === 'TAMPERED_OR_INVALID') {
             verdictBanner.classList.add('tampered');
             verdictBadge.textContent = 'TAMPERED / INVALID';
-            verdictHeadline.textContent = 'Integrity Check Failed!';
-            verdictDetail.textContent = 'The document contents do NOT match the signed cryptographic hash, or the signature byte stream has been corrupted.';
+            const firstSig = report.signatures && report.signatures[0];
+            const hashIntact = firstSig && firstSig.intact;
+            const rsaValid = firstSig && firstSig.cryptographically_valid;
+            if (hashIntact && !rsaValid) {
+                verdictHeadline.textContent = 'Cryptographic Proof Invalid!';
+                verdictDetail.textContent = 'The document byte-range hash is intact (content not modified), but the RSA/ECDSA signature proof failed. The private key used does not match the certificate, or the signature data is corrupt.';
+            } else {
+                verdictHeadline.textContent = 'Integrity Check Failed!';
+                verdictDetail.textContent = 'The document contents do NOT match the signed cryptographic hash — the file has been modified after signing, or the signature byte stream is corrupted.';
+            }
             verdictIcon.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         } else {
             verdictBanner.classList.add('unsigned');
