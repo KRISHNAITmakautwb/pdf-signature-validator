@@ -3,28 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Signature Sentinel | Lab Cryptographic Validation Service</title>
-    <meta name="description" content="High-assurance PDF digital signature validation portal for research labs. Validates ISO 32000, PAdES, ByteRange integrity, PKCS#7 CMS, and shadow attack anomalies.">
+    <title>DecipherSig प्रमाणिक | de.ci.phe.red. Lab, IIT Bhilai</title>
+    <meta name="description" content="DecipherSig प्रमाणिक — High-assurance PDF digital signature validation portal by de.ci.phe.red. Lab, IIT Bhilai. Validates ISO 32000, PAdES, ByteRange integrity, PKCS#7 CMS, and shadow attack anomalies.">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="/static/style.css?v=3.2">
+    <link rel="stylesheet" href="/static/style.css?v=4.0">
 </head>
 <body>
     <!-- Top Navigation Bar -->
     <header class="app-header">
         <div class="header-left">
-            <div class="logo-badge">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    <path d="M9 12l2 2 4-4"/>
-                </svg>
+            <div class="institute-brand">
+                <div class="lab-logo-badge" title="de.ci.phe.red. Lab">
+                    <img src="/static/deciphered_lab_logo.png" alt="de.ci.phe.red. Lab Logo" class="lab-logo-img" />
+                </div>
+                <div class="brand-text">
+                    <span class="lab-name">de.ci.phe.red. Lab</span>
+                    <span class="institute-name">IIT BHILAI</span>
+                </div>
             </div>
-            <div>
-                <h1 class="service-title">PDF Signature Sentinel</h1>
+
+            <div class="brand-divider"></div>
+
+            <div class="service-identity">
+                <h1 class="service-title">DecipherSig <span class="indic-title">प्रमाणिक</span></h1>
                 <p class="service-subtitle">Lab Cryptographic Verification & Audit Portal</p>
             </div>
         </div>
@@ -55,10 +61,14 @@
     <main class="main-container">
         <!-- Hero Section -->
         <section class="hero-section">
+            <div class="lab-affiliation-badge">
+                <img src="/static/deciphered_lab_logo.png" alt="Lab Logo" class="badge-mini-logo" />
+                <span><strong>de.ci.phe.red. Lab</strong> &bull; Indian Institute of Technology Bhilai (IIT Bhilai)</span>
+            </div>
             <div class="hero-badge">PAdES & ISO 32000-1 / 32000-2 COMPLIANT</div>
             <h2 class="hero-heading">Validate Digital Signatures, Byte Integrity & Trust Chains</h2>
             <p class="hero-desc">
-                Designed for lab members to verify document authenticity, cryptographic hashes, 
+                Developed at <strong>de.ci.phe.red. Lab, IIT Bhilai</strong> for researchers and institutions to verify document authenticity, cryptographic hashes, 
                 X.509 certificate chains, and detect PDF Shadow Attacks or incremental tampering.
             </p>
         </section>
@@ -132,12 +142,12 @@
                 </div>
 
                 <div class="verdict-actions">
-                    <button class="btn-action btn-action-emerald" id="downloadVerifiedTickBtn" onclick="window.downloadGreenTickCopy && window.downloadGreenTickCopy()" title="Download Verified Display Copy with permanent Green Tick (replaces ? mark)">
+                    <button type="button" class="btn-action btn-action-emerald" id="validationBtn" title="Validate cryptographic signature and check integrity">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                             <polyline points="22 4 12 14.01 9 11.01"/>
                         </svg>
-                        Green Tick PDF (✔)
+                        <span id="validationBtnText">Validation</span>
                     </button>
                     <button class="btn-action btn-action-primary" id="downloadPdfBtn" title="Download the original PDF">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -167,7 +177,7 @@
                 </div>
             </div>
 
-            <!-- Green Tick Callout Banner -->
+            <!-- Validation Certificate Callout Banner -->
             <div class="verified-tick-callout" id="verifiedTickCallout" style="display: none;">
                 <div class="tick-callout-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00B23B" stroke-width="2.5">
@@ -176,11 +186,16 @@
                     </svg>
                 </div>
                 <div class="tick-callout-text">
-                    <strong>Replace Question Mark (?) with Green Tick (✔)</strong>
-                    <span>Your document has been verified cryptographically. Download a verified display copy where the yellow <strong>?</strong> is replaced with the permanent green checkmark badge, visible on any viewer and printout.</span>
+                    <strong id="calloutStatusTitle">Validation Completed — Signature Verified (✔)</strong>
+                    <span>Your document has been verified cryptographically. If you want to download the verified copy with the permanent green checkmark badge, click below:</span>
                 </div>
-                <button class="btn-verified-tick" id="bannerVerifiedTickBtn" onclick="window.downloadGreenTickCopy && window.downloadGreenTickCopy()">
-                    Download Green Tick PDF
+                <button type="button" class="btn-verified-tick" id="bannerVerifiedTickBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span id="bannerVerifiedBtnText">Download Validation Certificate</span>
                 </button>
             </div>
 
@@ -336,7 +351,16 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-        <p>Crypto Lab Signature Sentinel &bull; Open-source ISO 32000-1 / PAdES Validation Portal</p>
+        <div class="footer-lab-brand">
+            <div class="lab-logo-badge small" title="de.ci.phe.red. Lab">
+                <img src="/static/deciphered_lab_logo.png" alt="de.ci.phe.red. Lab Logo" class="lab-logo-img" />
+            </div>
+            <div class="footer-brand-text">
+                <span class="footer-lab-name">de.ci.phe.red. Lab</span>
+                <span class="footer-inst-name">IIT BHILAI &bull; Department of Computer Science & Engineering</span>
+            </div>
+        </div>
+        <p class="footer-desc">DecipherSig प्रमाणिक &bull; Advanced Cryptographic Signature & Digital Document Forensic Engine &bull; ISO 32000-1 / PAdES</p>
         <p class="footer-links">
             <a href="/docs">OpenAPI Spec</a> &bull; 
             <a href="/api/health">System Health</a> &bull; 
@@ -344,6 +368,15 @@
         </p>
     </footer>
 
-    <script src="/static/app.js?v=3.2"></script>
+    <!-- Floating Validation Toast -->
+    <div id="toastNotification" class="toast-notification" style="display: none;">
+        <span class="toast-icon">✔</span>
+        <div class="toast-content">
+            <strong class="toast-title">Validation Completed</strong>
+            <span id="toastMessage" class="toast-message">Signatures verified. Click "Download Validation Certificate" if you wish to download.</span>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=4.0"></script>
 </body>
 </html>

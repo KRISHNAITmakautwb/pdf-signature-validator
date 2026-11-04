@@ -217,18 +217,33 @@ document.addEventListener('DOMContentLoaded', () => {
             verdictIcon.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
         }
 
-        // Handle Green Tick Download Visibility
+        // Reset Validation & Certificate Download Controls to Standard Initial State
+        const validationBtn = document.getElementById('validationBtn');
         const verifiedTickCallout = document.getElementById('verifiedTickCallout');
-        const downloadVerifiedTickBtn = document.getElementById('downloadVerifiedTickBtn');
         const isIntact = report.signatures && report.signatures.length > 0 && report.signatures.some(s => s.intact);
 
-        if (isIntact && (report.overall_status === 'VALID' || report.overall_status === 'INTACT_UNTRUSTED_CA' || report.overall_status === 'CONTENT_INTACT_RSA_INVALID')) {
-            if (verifiedTickCallout) verifiedTickCallout.style.display = 'flex';
-            if (downloadVerifiedTickBtn) downloadVerifiedTickBtn.style.display = 'inline-flex';
-        } else {
-            if (verifiedTickCallout) verifiedTickCallout.style.display = 'none';
-            if (downloadVerifiedTickBtn) downloadVerifiedTickBtn.style.display = 'none';
+        isValidationConfirmed = false;
+        if (validationBtn) {
+            validationBtn.className = 'btn-action btn-action-emerald';
+            validationBtn.disabled = false;
+            validationBtn.title = 'Validate cryptographic signature and check integrity';
+            validationBtn.innerHTML = `
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span id="validationBtnText">Validation</span>
+            `;
+            if (isIntact && (report.overall_status === 'VALID' || report.overall_status === 'INTACT_UNTRUSTED_CA' || report.overall_status === 'CONTENT_INTACT_RSA_INVALID')) {
+                validationBtn.style.display = 'inline-flex';
+            } else {
+                validationBtn.style.display = 'none';
+            }
         }
+
+        // Standard UX Rule: Explicit confirmation first.
+        // Certificate callout banner remains hidden until user clicks "Validation".
+        if (verifiedTickCallout) verifiedTickCallout.style.display = 'none';
 
         // Tab 1: Signatures Overview
         renderSignaturesOverview(report.signatures);
@@ -523,8 +538,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Green Tick Verified Copy Download Handler
-    async function downloadGreenTickCopy() {
+    // Green Tick Verified Copy Download Handler & State Locks
+    let isGeneratingGreenTick = false;
+    let isValidationConfirmed = false;
+
+    async function downloadGreenTickCopy(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if (isGeneratingGreenTick) {
+            console.warn('[GreenTick] Download already in progress. Ignoring duplicate trigger.');
+            return;
+        }
+
         console.log('[GreenTick] downloadGreenTickCopy triggered');
         
         if (!currentPdfBlob) {
@@ -534,22 +562,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!currentPdfBlob) {
-            alert('Document file not in active browser memory. Please drop or choose the PDF file once more, then click Download Green Tick.');
+            alert('Document file not in active browser memory. Please drop or choose the PDF file once more, then click Validation.');
             return;
         }
 
-        const btn1 = document.getElementById('downloadVerifiedTickBtn');
-        const btn2 = document.getElementById('bannerVerifiedTickBtn');
-        const originalText1 = btn1 ? btn1.innerHTML : '';
-        const originalText2 = btn2 ? btn2.innerHTML : '';
+        isGeneratingGreenTick = true;
 
-        if (btn1) {
-            btn1.disabled = true;
-            btn1.innerHTML = '⏳ Generating Green Tick (✔)...';
-        }
-        if (btn2) {
-            btn2.disabled = true;
-            btn2.innerHTML = '⏳ Generating...';
+        const btn = document.getElementById('bannerVerifiedTickBtn');
+        const originalText = btn ? btn.innerHTML : '';
+
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.innerHTML = '<span class="btn-spinner"></span> Generating Certificate...';
         }
 
         const formData = new FormData();
@@ -557,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('file', currentPdfBlob, fname);
 
         try {
-            console.log('[GreenTick] Sending POST /api/verified-copy for:', fname);
+            console.log('[ValidationCertificate] Sending POST /api/verified-copy for:', fname);
             const res = await fetch('/api/verified-copy', {
                 method: 'POST',
                 body: formData
@@ -569,45 +594,125 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const blob = await res.blob();
-            console.log('[GreenTick] Received verified blob size:', blob.size);
+            console.log('[ValidationCertificate] Received verified blob size:', blob.size);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
+            a.style.display = 'none';
             a.href = url;
             
             const baseName = fname.replace(/\.[^/.]+$/, "");
-            a.download = `${baseName}_verified_green_tick.pdf`;
+            a.download = `${baseName}_validation_certificate.pdf`;
             
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            console.log('[GreenTick] Download completed successfully!');
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            console.log('[ValidationCertificate] Download completed successfully!');
+            showToast('Certificate Downloaded ✔', 'Validation Certificate saved to your system.');
         } catch (err) {
-            console.error('[GreenTick] Download failed:', err);
-            alert(`Could not generate Green Tick PDF: ${err.message}`);
+            console.error('[ValidationCertificate] Download failed:', err);
+            alert(`Could not generate Validation Certificate: ${err.message}`);
         } finally {
-            if (btn1) {
-                btn1.disabled = false;
-                btn1.innerHTML = originalText1;
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btn.innerHTML = originalText;
             }
-            if (btn2) {
-                btn2.disabled = false;
-                btn2.innerHTML = originalText2;
-            }
+            // Maintain guard for 1.5s to prevent any accidental double-click / rapid re-trigger
+            setTimeout(() => {
+                isGeneratingGreenTick = false;
+            }, 1500);
         }
     }
 
-    // Expose globally for inline onclick fallbacks
+    // Expose globally for backward compatibility
     window.downloadGreenTickCopy = downloadGreenTickCopy;
 
-    const downloadVerifiedTickBtn = document.getElementById('downloadVerifiedTickBtn');
-    if (downloadVerifiedTickBtn) {
-        downloadVerifiedTickBtn.addEventListener('click', downloadGreenTickCopy);
+    // Toast Notification Helper
+    let toastTimer = null;
+    function showToast(title, message) {
+        const toast = document.getElementById('toastNotification');
+        const toastMsg = document.getElementById('toastMessage');
+        const toastTitle = toast ? toast.querySelector('.toast-title') : null;
+        if (!toast) return;
+
+        if (toastTitle) toastTitle.textContent = title;
+        if (toastMsg) toastMsg.textContent = message;
+
+        toast.style.display = 'flex';
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toast.style.display = 'none';
+        }, 4500);
     }
 
+    // Validation Button Click Handler (Follows standard UI/UX rules: confirmation first, NO automatic download)
+    function onValidationBtnClick(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        const validationBtn = document.getElementById('validationBtn');
+        const callout = document.getElementById('verifiedTickCallout');
+
+        if (isValidationConfirmed) {
+            showToast('Validation Already Completed ✔', 'Document signatures & cryptographic integrity are confirmed. You can download the validation certificate using the button below.');
+            if (callout && callout.style.display !== 'none') {
+                callout.classList.remove('pulse-highlight');
+                void callout.offsetWidth;
+                callout.classList.add('pulse-highlight');
+                callout.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
+        }
+
+        // Standard UX Button Transition: Idle -> Validating (micro-feedback) -> Completed
+        if (validationBtn) {
+            validationBtn.classList.add('loading');
+            validationBtn.innerHTML = `<span class="btn-spinner"></span> <span>Validating...</span>`;
+        }
+
+        setTimeout(() => {
+            isValidationConfirmed = true;
+            if (validationBtn) {
+                validationBtn.classList.remove('loading');
+                validationBtn.classList.add('completed');
+                validationBtn.innerHTML = `
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span id="validationBtnText">Validation Completed ✔</span>
+                `;
+                validationBtn.setAttribute('title', 'Validation completed — cryptographic integrity verified');
+            }
+
+            const isIntact = currentReport?.signatures?.some(s => s.intact);
+            if (isIntact) {
+                if (callout) {
+                    callout.style.display = 'flex';
+                    callout.classList.remove('pulse-highlight');
+                    void callout.offsetWidth; // force reflow for CSS animation
+                    callout.classList.add('pulse-highlight');
+                    callout.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                showToast('Validation Completed ✔', 'Signatures and cryptographic integrity verified. Click "Download Validation Certificate" below if you wish to download.');
+            } else {
+                showToast('Validation Completed', 'Document cryptographic inspection finished. Details shown below.');
+            }
+        }, 350);
+    }
+
+    // Validation Button: Only confirms and displays "Validation Completed ✔"
+    const validationBtnEl = document.getElementById('validationBtn');
+    if (validationBtnEl) {
+        validationBtnEl.addEventListener('click', onValidationBtnClick);
+    }
+
+    // Single Download Button in Callout Banner: Explicit user choice whether to download or not
     const bannerVerifiedTickBtn = document.getElementById('bannerVerifiedTickBtn');
     if (bannerVerifiedTickBtn) {
-        bannerVerifiedTickBtn.addEventListener('click', downloadGreenTickCopy);
+        bannerVerifiedTickBtn.addEventListener('click', (e) => downloadGreenTickCopy(e));
     }
 
     printReportBtn.addEventListener('click', () => window.print());

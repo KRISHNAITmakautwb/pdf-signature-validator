@@ -1,0 +1,16 @@
+[Unit]
+Description=PDF Signature Validator (IIT Bhilai Lab)
+After=network.target
+
+[Service]
+Type=simple
+User=crypto_nn
+WorkingDirectory=/home/crypto_nn/pdf-signature-validator
+ExecStart=/home/crypto_nn/miniconda3/bin/uvicorn app.main:app --host 0.0.0.0 --port 8001
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

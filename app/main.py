@@ -16,9 +16,9 @@ CERTS_DIR = os.getenv("CERTS_DIR", os.path.abspath(os.path.join(os.path.dirname(
 os.makedirs(CERTS_DIR, exist_ok=True)
 
 app = FastAPI(
-    title="Lab PDF Digital Signature Sentinel",
-    description="High-assurance digital signature validation service for research labs. Supports PAdES, ISO 32000, CMS/PKCS#7, shadow attack inspection, and certificate trust chain analysis.",
-    version="1.0.0"
+    title="DecipherSig प्रमाणिक - Digital Signature Validator",
+    description="High-assurance digital signature validation portal by de.ci.phe.red. Lab, IIT Bhilai. Supports PAdES, ISO 32000, CMS/PKCS#7, shadow attack inspection, and certificate trust chain analysis.",
+    version="1.1.0"
 )
 
 # Enable CORS for lab network / microservices
@@ -37,7 +37,7 @@ validator = PDFSignatureValidator(trust_roots_dir=CERTS_DIR)
 async def health_check():
     return {
         "status": "healthy",
-        "service": "Lab PDF Signature Validation Service",
+        "service": "DecipherSig प्रमाणिक - Validation Service (de.ci.phe.red. Lab, IIT Bhilai)",
         "pyhanko_available": PYHANKO_AVAILABLE,
         "cryptography_available": CRYPTO_AVAILABLE,
         "custom_trust_roots_count": len(validator.custom_root_certs)
@@ -94,7 +94,7 @@ async def download_verified_display_copy(file: UploadFile = File(...)):
         verified_bytes = await asyncio.to_thread(generate_verified_display_copy, content, report)
         
         base_name = os.path.splitext(file.filename)[0]
-        out_filename = f"{base_name}_verified_green_tick.pdf"
+        out_filename = f"{base_name}_validation_certificate.pdf"
         
         return Response(
             content=verified_bytes,
@@ -224,7 +224,11 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 async def serve_index():
     index_file = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_file):
-        return FileResponse(index_file)
+        response = FileResponse(index_file)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     return {"message": "PDF Signature Validator API running. Visit /docs for Swagger API."}
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
